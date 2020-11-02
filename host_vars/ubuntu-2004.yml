@@ -1,0 +1,2 @@
+ansible_connection: sshlxc
+ansible_host: ubuntu-2004@hetzner-de
