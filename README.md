@@ -7,6 +7,72 @@ tools.
 
 ![infrastructure](doc/images/infra.png)
 
+I do have
+
+- my desktop computer named "uli-desktop". I'm running ansible here
+- a lxd/lxc host named "hetzner-de"
+- a ssh connection to "hetzner-de" - executing `ssh hetzner-de` gives me a root shell on the machine
+- a lxd/lxc container named "ubuntu-2004" running on "hetzner-de"
+
+I do want to modify the lxd/lxc container using ansible.
+
+## Existing Solutions
+
+### Standard ansible connection "lxd"
+
+There is a standard ansible connection plugin named "lxd".
+It works quite nicely, but
+
+- requires the lxc command line tools to be installed on my desktop computer "uli-desktop"
+- requires a remote lxc connection from my desktop computer "uli-desktop" to the lxd/lxc host "hetzner-de"
+
+I don't like these requirements!
+
+### lxc_ssh
+
+On Github, there is a connection plugin named [chiffier/lxc_ssh](https://github.com/chifflier/ansible-lxc-ssh)
+
+There are these issues:
+
+- very old implementation - about 5 years old
+- uses `lxc attach` which isn't supported in recent versions of lxc
+
+I didn't do any experiments with this plugin
+
+### sshlxc
+
+On Github, there is a connection plugin named [antifuchs/sshlxc](https://github.com/antifuchs/ansible-sshlxd-connection)
+
+There are these issues:
+
+- very old implementation - about 5 years old
+- does not work for me on ansible 2.9
+- its documentation is inconsistent, especially the terms "lxc" and "lxd" are mixed up in various places
+
+### sshjail
+
+"sshlxc" is based on [sshjail](https://github.com/austinhyde/ansible-sshjail).
+There seems to be active maintenance on sshjail, so I decided
+to base my lxc solution on this. I incorporated this
+[sshjail - fork](https://github.com/seliopou/ansible-sshjail), too.
+
+## Install
+
+To use this plugin, you'll have to:
+
+- create a folder "connection_plugins" in your ansible project
+- copy the file "sshlxc2.py" into this folder
+
+## Usage
+
+To use the plugin, you'll have to configure your lxc container correctly.
+You can use [host_vars/ubuntu-2004.yml](host_vars/ubuntu-2004.yml) as a starting point.
+
+Important are these:
+
+- ansible_connection: Use "sshlxc2" for this!
+- ansible_host: Use a combination of "{{containername}}@{{lxdhost}}" for this!
+
 ## Modifications to sshjail
 
 ### Variablen und Bezeichnungen
