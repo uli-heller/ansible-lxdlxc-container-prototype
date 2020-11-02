@@ -1,6 +1,11 @@
 # ansible-lxdlxc-container-prototype
 
-A prototype managing lxdlxc containers using ansible
+A prototype managing lxdlxc containers using ansible.
+The basic idea is to ssh into the lxd host and
+communicate with the container via the lxd command line
+tools.
+
+![infrastructure](doc/images/infra.png)
 
 ## Modifications to sshjail
 
