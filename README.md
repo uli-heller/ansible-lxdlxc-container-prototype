@@ -28,6 +28,10 @@ A prototype managing lxdlxc containers using ansible
 
 ## Problems
 
+### Separate pythons for lxchost and container
+
+Currently, it seems that both the lxchost and the container have to use the same python, i.e. `/usr/bin/python3`.
+
 ### Platform unknown on host ubuntu-2004 is using the discovered Python interpreter at /usr/bin/python
 
 Fixed by:
@@ -40,7 +44,7 @@ index 88c385b..9f4417b 100644
 @@ -1,2 +1,3 @@
  ansible_connection: sshlxculi
  ansible_host: ubuntu-2004@hetzner-de
-+ansible_python_interpreter: /usr/bin/python
++ansible_python_interpreter: /usr/bin/python3
 ```
 
 ## Links
