@@ -1,0 +1,12 @@
+---
+# file: lxd-containers.yml
+- hosts: lxd_containers
+  tasks:
+    - name: Create file /tmp/uli-war-da.txt
+      copy:
+        content: |
+          Uli war da!
+        dest: /tmp/uli-war-da.txt
+        group: root
+        owner: root
+        mode: '644'

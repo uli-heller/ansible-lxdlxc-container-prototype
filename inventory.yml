@@ -1,0 +1,11 @@
+all:
+  hosts:
+  children:
+    lxd_hosts:
+      hosts:
+        hetzner-de:
+    lxd_containers:
+      children:
+        hetzner_de_containers:
+          hosts:
+            ubuntu-2004:
