@@ -374,22 +374,6 @@ class Connection(ConnectionBase):
         # display.vvv("JAIL (%s) %s" % (local_cmd), host=self.host)
         return super(Connection, self).exec_command(cmd, in_data, True)
 
-    def _normalize_path(self, path, prefix):
-        if not path.startswith(os.path.sep):
-            path = os.path.join(os.path.sep, path)
-        normpath = os.path.normpath(path)
-        return os.path.join(prefix, normpath[1:])
-
-    def _copy_file(self, from_file, to_file, executable='/bin/sh'):
-        plugin = self.become
-        shell = get_shell_plugin(executable=executable)
-        copycmd = plugin.build_become_command(' '.join(['cp', from_file, to_file]), shell)
-
-        display.vvv(u"REMOTE COPY {0} TO {1}".format(from_file, to_file), host=self.inventory_hostname)
-        code, stdout, stderr = self._lxchost_command(copycmd)
-        if code != 0:
-            raise AnsibleError("failed to copy file from %s to %s:\n%s\n%s" % (from_file, to_file, stdout, stderr))
-
     @contextmanager
     def tempfile(self):
         code, stdout, stderr = self._lxchost_command('mktemp')
@@ -406,22 +390,6 @@ class Connection(ConnectionBase):
         code, stdout, stderr = self._lxchost_command(' '.join(['rm', tmp]))
         if code != 0:
             raise AnsibleError("failed to remove temp file %s:\n%s\n%s" % (tmp, stdout, stderr))
-
-#    def put_file(self, in_path, out_path):
-#        ''' transfer a file from local to remote jail '''
-#        out_path = self._normalize_path(out_path, self.get_jail_path())
-#
-#        with self.tempfile() as tmp:
-#            super(Connection, self).put_file(in_path, tmp)
-#            self._copy_file(tmp, out_path)
-#
-#    def fetch_file(self, in_path, out_path):
-#        ''' fetch a file from remote to local '''
-#        in_path = self._normalize_path(in_path, self.get_jail_path())
-#
-#        with self.tempfile() as tmp:
-#            self._copy_file(in_path, tmp)
-#            super(Connection, self).fetch_file(tmp, out_path)
 
     def put_file(self, in_path, out_path):
         ''' transfer a file from local to remote container '''
