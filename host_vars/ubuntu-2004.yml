@@ -1,4 +1,4 @@
 ansible_connection: sshlxculi
 ansible_host: ubuntu-2004@hetzner-de
 ansible_python_interpreter: /usr/bin/python3
-ansible_ssh_user: root
+#ansible_ssh_user: root
