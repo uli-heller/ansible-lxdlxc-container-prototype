@@ -61,7 +61,7 @@ to base my lxc solution on this. I incorporated this
 To use this plugin, you'll have to:
 
 - create a folder "connection_plugins" in your ansible project
-- copy the file "sshlxc2.py" into this folder
+- copy the file "sshlxd.py" into this folder
 
 ## Usage
 
@@ -70,8 +70,8 @@ You can use [host_vars/ubuntu-2004.yml](host_vars/ubuntu-2004.yml) as a starting
 
 Important are these:
 
-- ansible_connection: Use "sshlxc2" for this!
-- ansible_host: Use a combination of "{{containername}}@{{lxdhost}}" for this!
+- ansible_connection: Use "sshlxd" for this!
+- ansible_host: Use a combination of "{{lxdhost}}:{{containername}}" for this!
 
 ## Modifications to sshjail
 

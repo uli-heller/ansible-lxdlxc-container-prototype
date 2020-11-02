@@ -288,13 +288,13 @@ class ConnectionBase(SSHConnection):
 class Connection(ConnectionBase):
     ''' ssh based connections '''
 
-    transport = 'sshlxc2'
+    transport = 'sshlxd'
 
     def __init__(self, *args, **kwargs):
         super(Connection, self).__init__(*args, **kwargs)
         # self.host == containername@lxchost
         self.inventory_hostname = self.host
-        self.containerspec, self.host = self.host.split('@', 1)
+        self.host, self.containerspec = self.host.split(':', 1)
         # self.containerspec == containername
         # self.host == lxchost
         # this way SSHConnection parent class uses the lxchost as the SSH remote host
