@@ -288,31 +288,30 @@ class ConnectionBase(SSHConnection):
 class Connection(ConnectionBase):
     ''' ssh based connections '''
 
-    transport = 'sshjail'
+    transport = 'sshlxculi'
 
     def __init__(self, *args, **kwargs):
         super(Connection, self).__init__(*args, **kwargs)
-        # self.host == jailname@jailhost
+        # self.host == containername@lxchost
         self.inventory_hostname = self.host
-        self.jailspec, self.host = self.host.split('@', 1)
-        # self.jailspec == jailname
-        # self.host == jailhost
-        # this way SSHConnection parent class uses the jailhost as the SSH remote host
+        self.containerspec, self.host = self.host.split('@', 1)
+        # self.containerspec == containername
+        # self.host == lxchost
+        # this way SSHConnection parent class uses the lxchost as the SSH remote host
 
-        # jail information loaded on first use by match_jail
-        self.jid = None
-        self.jname = None
-        self.jpath = None
-        self.connector = None
+        # container information loaded on first use by match_container
+        #self.jid = None
+        self.containername = None
+        #self.jpath = None
 
         # logging.warning(self._play_context.connection)
 
-    def match_jail(self):
-        if self.jid is None:
-            code, stdout, stderr = self._jailhost_command("jls -q jid name host.hostname path")
+    def match_container(self):
+        if self.containername is None:
+            code, stdout, stderr = self._lxchost_command("lxc list --columns n --format csv")
             if code != 0:
-                display.vvv("JLS stdout: %s" % stdout)
-                raise AnsibleError("jls returned non-zero!")
+                display.vvv("LXC stdout: %s" % stdout)
+                raise AnsibleError("lxc returned non-zero!")
 
             lines = stdout.strip().split(b'\n')
             found = False
@@ -320,34 +319,25 @@ class Connection(ConnectionBase):
                 if line.strip() == '':
                     break
 
-                jid, name, hostname, path = to_text(line).strip().split()
-                if name == self.jailspec or hostname == self.jailspec:
-                    self.jid = jid
-                    self.jname = name
-                    self.jpath = path
+                name = to_text(line).strip()
+                if name == self.containerspec:
+                    #self.jid = jid
+                    self.containername = name
+                    #self.jpath = path
                     found = True
                     break
 
             if not found:
-                raise AnsibleError("failed to find a jail with name or hostname of '%s'" % self.jailspec)
+                raise AnsibleError("failed to find a container with name '%s'" % self.containerspec)
 
     def get_jail_path(self):
-        self.match_jail()
+        self.match_container()
         return self.jpath
 
-    def get_jail_id(self):
-        self.match_jail()
-        return self.jid
-
-    def get_jail_connector(self):
-        if self.connector is None:
-            code, _, _ = self._jailhost_command("which -s jailme")
-            if code != 0:
-                self.connector = 'jexec'
-            else:
-                self.connector = 'jailme'
-        return self.connector
-
+    def get_lxc_name(self):
+        self.match_container()
+        return self.containername
+    
     def _strip_sudo(self, executable, cmd):
         # Get the command without sudo
         sudoless = cmd.rsplit(executable + ' -c ', 1)[1]
@@ -366,7 +356,7 @@ class Connection(ConnectionBase):
         cmd = '%s%s' % (cmd, "'")
         return cmd
 
-    def _jailhost_command(self, cmd):
+    def _lxchost_command(self, cmd):
         return super(Connection, self).exec_command(cmd, in_data=None, sudoable=True)
 
     def exec_command(self, cmd, in_data=None, executable='/bin/sh', sudoable=True):
@@ -381,10 +371,7 @@ class Connection(ConnectionBase):
             cmd = self._strip_sudo(executable, cmd)
 
         cmd = ' '.join([executable, '-c', pipes.quote(cmd)])
-        if slpcmd:
-            cmd = '%s %s %s %s' % (self.get_jail_connector(), self.get_jail_id(), cmd, '&& sleep 0')
-        else:
-            cmd = '%s %s %s' % (self.get_jail_connector(), self.get_jail_id(), cmd)
+        cmd = 'lxc exec %s -- %s' % (self.get_lxc_name(), cmd)
 
         if self._play_context.become:
             # display.debug("_low_level_execute_command(): using become for this command")
@@ -407,24 +394,24 @@ class Connection(ConnectionBase):
         copycmd = plugin.build_become_command(' '.join(['cp', from_file, to_file]), shell)
 
         display.vvv(u"REMOTE COPY {0} TO {1}".format(from_file, to_file), host=self.inventory_hostname)
-        code, stdout, stderr = self._jailhost_command(copycmd)
+        code, stdout, stderr = self._lxchost_command(copycmd)
         if code != 0:
             raise AnsibleError("failed to copy file from %s to %s:\n%s\n%s" % (from_file, to_file, stdout, stderr))
 
     @contextmanager
     def tempfile(self):
-        code, stdout, stderr = self._jailhost_command('mktemp')
+        code, stdout, stderr = self._lxchost_command('mktemp')
         if code != 0:
             raise AnsibleError("failed to make temp file:\n%s\n%s" % (stdout, stderr))
         tmp = to_text(stdout.strip().split(b'\n')[-1])
 
-        code, stdout, stderr = self._jailhost_command(' '.join(['chmod 0644', tmp]))
+        code, stdout, stderr = self._lxchost_command(' '.join(['chmod 0644', tmp]))
         if code != 0:
             raise AnsibleError("failed to make temp file %s world readable:\n%s\n%s" % (tmp, stdout, stderr))
 
         yield tmp
 
-        code, stdout, stderr = self._jailhost_command(' '.join(['rm', tmp]))
+        code, stdout, stderr = self._lxchost_command(' '.join(['rm', tmp]))
         if code != 0:
             raise AnsibleError("failed to remove temp file %s:\n%s\n%s" % (tmp, stdout, stderr))
 
