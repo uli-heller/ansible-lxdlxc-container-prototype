@@ -288,7 +288,7 @@ class ConnectionBase(SSHConnection):
 class Connection(ConnectionBase):
     ''' ssh based connections '''
 
-    transport = 'sshlxculi'
+    transport = 'sshlxc2'
 
     def __init__(self, *args, **kwargs):
         super(Connection, self).__init__(*args, **kwargs)
