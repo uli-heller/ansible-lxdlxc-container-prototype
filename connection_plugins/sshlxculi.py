@@ -300,9 +300,7 @@ class Connection(ConnectionBase):
         # this way SSHConnection parent class uses the lxchost as the SSH remote host
 
         # container information loaded on first use by match_container
-        #self.jid = None
         self.containername = None
-        #self.jpath = None
 
         # logging.warning(self._play_context.connection)
 
@@ -321,18 +319,12 @@ class Connection(ConnectionBase):
 
                 name = to_text(line).strip()
                 if name == self.containerspec:
-                    #self.jid = jid
                     self.containername = name
-                    #self.jpath = path
                     found = True
                     break
 
             if not found:
                 raise AnsibleError("failed to find a container with name '%s'" % self.containerspec)
-
-    def get_jail_path(self):
-        self.match_container()
-        return self.jpath
 
     def get_lxc_name(self):
         self.match_container()
@@ -415,18 +407,30 @@ class Connection(ConnectionBase):
         if code != 0:
             raise AnsibleError("failed to remove temp file %s:\n%s\n%s" % (tmp, stdout, stderr))
 
-    def put_file(self, in_path, out_path):
-        ''' transfer a file from local to remote jail '''
-        out_path = self._normalize_path(out_path, self.get_jail_path())
+#    def put_file(self, in_path, out_path):
+#        ''' transfer a file from local to remote jail '''
+#        out_path = self._normalize_path(out_path, self.get_jail_path())
+#
+#        with self.tempfile() as tmp:
+#            super(Connection, self).put_file(in_path, tmp)
+#            self._copy_file(tmp, out_path)
+#
+#    def fetch_file(self, in_path, out_path):
+#        ''' fetch a file from remote to local '''
+#        in_path = self._normalize_path(in_path, self.get_jail_path())
+#
+#        with self.tempfile() as tmp:
+#            self._copy_file(in_path, tmp)
+#            super(Connection, self).fetch_file(tmp, out_path)
 
+    def put_file(self, in_path, out_path):
+        ''' transfer a file from local to remote container '''
         with self.tempfile() as tmp:
             super(Connection, self).put_file(in_path, tmp)
-            self._copy_file(tmp, out_path)
+            self._lxchost_command(' '.join(['lxc', 'file', 'push', tmp, '%s/%s' % (self.get_lxc_name(), out_path), '--debug', '-p']))
 
     def fetch_file(self, in_path, out_path):
         ''' fetch a file from remote to local '''
-        in_path = self._normalize_path(in_path, self.get_jail_path())
-
         with self.tempfile() as tmp:
-            self._copy_file(in_path, tmp)
+            self._lxchost_command(' '.join(['lxc', 'file', 'pull', '%s/%s' % (self.get_lxc_name(), in_path), tmp]))
             super(Connection, self).fetch_file(tmp, out_path)
